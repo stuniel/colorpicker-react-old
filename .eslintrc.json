@@ -1,0 +1,23 @@
+{
+  "parser": "babel-eslint",
+  "extends": [
+    "standard",
+    "standard-jsx"
+  ],
+  "plugins": [
+    "react",
+    "import",
+    "promise",
+    "standard"
+  ],
+  "globals": {
+    "it": true,
+    "describe": true,
+    "expect": true,
+    "beforeEach": true,
+    "beforeAll": true,
+    "afterEach": true,
+    "afterAll": true,
+    "jest": true
+  }
+}
