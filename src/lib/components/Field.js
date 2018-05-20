@@ -1,8 +1,9 @@
 import React from 'react'
 
-import Pointer from './Pointer'
+import { createColorFromHSL, getBasicHue, getColor, hueChanged } from '../utils/colorHelpers'
+import { getLeft, getTop, getLeftKey, getTopKey } from '../utils/positionHelpers'
 
-import { hueChanged, getBasicHue, createColor, getLeft, getTop, getColor } from '../utils/helpers'
+import Pointer from './Pointer'
 
 const fieldWrapperVertical = {
   width: '100%',
@@ -19,7 +20,7 @@ const fieldWrapperHorizontal = {
 
 class Field extends React.Component {
   state = {
-    color: createColor(this.props.color),
+    color: createColorFromHSL(this.props.color),
     top: 0,
     left: 0,
     pressed: false,
@@ -31,11 +32,11 @@ class Field extends React.Component {
 
     // Store fields coordinates
     this._rect = this._field.getBoundingClientRect()
-    const left = hsb.s * this._rect.width + this._rect.left
-    const top = (1 - hsb.b) * this._rect.height + this._rect.top
+    const left = hsb.s * this._rect.width + this._rect.left + window.scrollX
+    const top = (1 - hsb.b) * this._rect.height + this._rect.top + window.scrollY
     this.setState({ top, left })
 
-    // Listen for mouse down on field
+    // Listen for mouse down and touch start on field and keydown on document
     this._field.addEventListener('mousedown', this.handleMouseDown)
     this._field.addEventListener('touchstart', this.handleMouseDown)
     document.addEventListener('keydown', this.handleKeyDown)
@@ -43,7 +44,7 @@ class Field extends React.Component {
 
   componentWillReceiveProps (props) {
     if (hueChanged(props.color, this.state.color)) {
-      const color = createColor(props.color)
+      const color = createColorFromHSL(props.color)
       const { hsb } = color
       const left = hsb.s * this._rect.width + this._rect.left
       const top = (1 - hsb.b) * this._rect.height + this._rect.top
@@ -52,9 +53,10 @@ class Field extends React.Component {
   }
 
   componentWillUnmount () {
-    // Unbind listeners for mouse down and touch start on field
+    // Unbind listeners
     this._field.removeEventListener('mousedown', this.handleMouseDown)
     this._field.removeEventListener('touchstart', this.handleMouseDown)
+    document.removeEventListener('keydown', this.handleKeyDown)
   }
 
   handleMouseDown = e => {
@@ -92,16 +94,26 @@ class Field extends React.Component {
     this._field.removeEventListener('mousemove', this.handleMouseMove)
   }
 
+  handleBlur = () => {
+    this.setState({ focused: false })
+  }
+
+  handleFocus = () => {
+    this.setState({ focused: true })
+  }
+
   handleKeyDown = (e) => {
     const { focused } = this.state
-    if (focused) {
+    const key = e.keyCode || e.which
+
+    // Ignore if pointer is not focused
+    if (!focused) { return }
+    if (focused && key > 36 && key < 41) {
       const { onChange } = this.props
       const { color: prevColor } = this.state
-      // const key = e.keyCode || e.which
-      const stepY = 5
-      const stepX = -5
-      const top = this.state.top + stepY
-      const left = this.state.left + stepX
+
+      const top = getTopKey(key, this._rect, this.state.top)
+      const left = getLeftKey(key, this._rect, this.state.left)
       let color = getColor(left, top, this._rect, prevColor)
       this.setState({ color, top, left })
 
@@ -109,14 +121,6 @@ class Field extends React.Component {
         onChange(color)
       }
     }
-  }
-
-  handleFocus = () => {
-    this.setState({ focused: true })
-  }
-
-  handleBlur = () => {
-    this.setState({ focused: false })
   }
 
   render () {

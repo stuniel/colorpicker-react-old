@@ -6,62 +6,34 @@ export const hueChanged = (prevColor, color) => {
   return prevH !== h
 }
 
+const stringToColor = (color) => {
+  const reg = /hsl\((\d+),\s*([\d.]+)%,\s*([\d.]+)%\)/g
+  return reg.exec(color).slice(1)
+}
+
 export const getBasicHue = (color) => {
-  const { hsl: { h } } = createColor(color)
+  const { hsl: { h } } = createColorFromHSL(color)
   const backgroundColor = `hsl(${h}, 100%, 50%)`
   return backgroundColor
 }
 
-export const createColor = (color) => {
-  // Check if color is valid
-  // Temporarily accept only hsl
-  const reg = /hsl\((\d+),\s*([\d.]+)%,\s*([\d.]+)%\)/g
-  const arr = reg.exec(color).slice(1)
+export const createColorFromHSL = (color) => {
+  const arr = stringToColor(color)
 
-  const hsl = {
-    h: arr[0],
-    s: arr[1] / 100,
-    l: arr[2] / 100,
-    value: color
-  }
+  const hsl = {}
+  hsl.h = arr[0]
+  hsl.s = arr[1] / 100
+  hsl.l = arr[2] / 100
+  hsl.value = color
 
-  const hsb = {}
   const t = hsl.s * (hsl.l < 0.5 ? hsl.l : 1 - hsl.l)
+  const hsb = {}
   hsb.h = hsl.h
   hsb.b = hsl.l + t
   hsb.s = hsl.l > 0 ? 2 * t / hsb.b : hsb.s
 
   // Convert to object
   return { hsb, hsl }
-}
-
-export const getLeft = (e, parent) => {
-  let left = ((e.targetTouches && e.targetTouches[0].clientX) || e.clientX) + window.scrollX
-
-  left = left <= parent.right
-    ? left
-    : parent.right
-
-  left = left >= parent.left
-    ? left
-    : parent.left
-
-  return left
-}
-
-export const getTop = (e, parent, direction) => {
-  let top = ((e.targetTouches && e.targetTouches[0].clientY) || e.clientY) + window.scrollY
-
-  if (direction === 'horizontal') { return parent.top + parent.height / 2 }
-  top = top <= parent.bottom
-    ? top
-    : parent.bottom
-
-  top = top >= parent.top
-    ? top
-    : parent.top
-
-  return top
 }
 
 export const getHue = (left, top, parent, color) => {
